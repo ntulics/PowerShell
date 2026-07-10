@@ -1,11 +1,6 @@
-The MIT License (MIT)
-
-Copyright (c) 2015 Thomas Stensitzki
 Copyright (c) 2026 Chris Ntuli
 
-This project is maintained by Chris Ntuli. It is based on the original
-Get-ExchangeEnvironmentReport by Steve Goodman (v1.6.2), later maintained by
-Thomas Stensitzki (v2.0 - v2.5).
+This project is maintained by Chris Ntuli.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
