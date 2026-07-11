@@ -212,8 +212,8 @@ $script:LastPresetUser = $null   # tracks a username auto-filled by a preset (e.
 $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SMTP Diagnostics and Testing Tool" Height="880" Width="860"
-        MinHeight="740" MinWidth="720" WindowStartupLocation="CenterScreen"
+        Title="SMTP Diagnostics and Testing Tool" Height="820" Width="980"
+        MinHeight="680" MinWidth="820" WindowStartupLocation="CenterScreen"
         Background="#F3F4F6" FontFamily="Segoe UI" FontSize="13">
   <Window.Resources>
     <Style TargetType="TextBox">
@@ -268,7 +268,7 @@ $xaml = @'
 
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="8"/><RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
     <Border Grid.Row="0" Background="#111827" Padding="20,16">
@@ -281,54 +281,52 @@ $xaml = @'
     <Border Grid.Row="1" Background="White" CornerRadius="10" BorderBrush="#E5E7EB" BorderThickness="1" Margin="16,16,16,8" Padding="18">
       <StackPanel>
         <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-          <StackPanel>
-            <TextBlock Text="SMTP provider" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,8"/>
-            <UniformGrid x:Name="ProviderGrid" Columns="3"/>
-            <TextBlock x:Name="LblProvider" Foreground="#6B7280" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
-          </StackPanel>
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="250"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <TextBlock Style="{StaticResource Lbl}" Text="SMTP provider"/>
+            <ComboBox x:Name="CboProvider" Grid.Column="1"/>
+            <TextBlock x:Name="LblProvider" Grid.Column="2" Foreground="#6B7280" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Margin="16,0,0,0"/>
+          </Grid>
         </Border>
 
         <Grid Margin="0,0,0,10">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <TextBlock Style="{StaticResource Lbl}" Text="From (sender address)"/>
-          <TextBox x:Name="TxtFrom" Grid.Column="1"/>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="32"/></Grid.RowDefinitions>
+          <TextBlock Text="From (sender address)" Foreground="#374151" Margin="0,0,0,4"/>
+          <TextBox x:Name="TxtFrom" Grid.Row="1"/>
+          <TextBlock Grid.Column="2" Text="To (recipient)" Foreground="#374151" Margin="0,0,0,4"/>
+          <TextBox x:Name="TxtTo" Grid.Row="1" Grid.Column="2"/>
         </Grid>
         <Grid Margin="0,0,0,10">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <TextBlock Style="{StaticResource Lbl}" Text="To (recipient)"/>
-          <TextBox x:Name="TxtTo" Grid.Column="1"/>
-        </Grid>
-        <Grid Margin="0,0,0,10">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <TextBlock Style="{StaticResource Lbl}" Text="SMTP Server Address"/>
-          <DockPanel Grid.Column="1">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="32"/></Grid.RowDefinitions>
+          <TextBlock Text="SMTP Server Address" Foreground="#374151" Margin="0,0,0,4"/>
+          <DockPanel Grid.Row="1">
             <Button x:Name="BtnMx" Style="{StaticResource Ghost}" Content="Lookup MX" DockPanel.Dock="Right" Margin="8,0,0,0"/>
             <TextBox x:Name="TxtServer"/>
           </DockPanel>
-        </Grid>
-        <Grid Margin="0,0,0,10">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <TextBlock Style="{StaticResource Lbl}" Text="SSL/TLS Settings"/>
-          <ComboBox x:Name="CboEnc" Grid.Column="1">
-            <ComboBoxItem>None</ComboBoxItem>
-            <ComboBoxItem IsSelected="True">StartTls</ComboBoxItem>
-            <ComboBoxItem>Ssl</ComboBoxItem>
-          </ComboBox>
-          <TextBlock Style="{StaticResource Lbl}" Grid.Column="2" Text="Port" Margin="18,0,12,0"/>
-          <TextBox x:Name="TxtPort" Grid.Column="3" Width="90" HorizontalAlignment="Left" Text="587"/>
+          <TextBlock Grid.Column="2" Text="SSL/TLS Settings" Foreground="#374151" Margin="0,0,0,4"/>
+          <Grid Grid.Row="1" Grid.Column="2">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="72"/></Grid.ColumnDefinitions>
+            <ComboBox x:Name="CboEnc">
+              <ComboBoxItem>None</ComboBoxItem>
+              <ComboBoxItem IsSelected="True">StartTls</ComboBoxItem>
+              <ComboBoxItem>Ssl</ComboBoxItem>
+            </ComboBox>
+            <TextBlock Style="{StaticResource Lbl}" Grid.Column="1" Text="Port" Margin="12,0,8,0"/>
+            <TextBox x:Name="TxtPort" Grid.Column="2" Text="587"/>
+          </Grid>
         </Grid>
 
         <CheckBox x:Name="ChkAuth" Content="SMTP Authentication" IsChecked="True" Margin="0,4,0,8" FontWeight="SemiBold"/>
         <StackPanel x:Name="AuthPanel">
           <Grid Margin="0,0,0,10">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <TextBlock Style="{StaticResource Lbl}" Text="User ID"/>
-            <TextBox x:Name="TxtUser" Grid.Column="1"/>
-          </Grid>
-          <Grid Margin="0,0,0,10">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <TextBlock Style="{StaticResource Lbl}" Text="Password"/>
-            <PasswordBox x:Name="PwdPass" Grid.Column="1"/>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="32"/></Grid.RowDefinitions>
+            <TextBlock Text="User ID" Foreground="#374151" Margin="0,0,0,4"/>
+            <TextBox x:Name="TxtUser" Grid.Row="1"/>
+            <TextBlock Grid.Column="2" Text="Password" Foreground="#374151" Margin="0,0,0,4"/>
+            <PasswordBox x:Name="PwdPass" Grid.Row="1" Grid.Column="2"/>
           </Grid>
         </StackPanel>
 
@@ -346,7 +344,8 @@ $xaml = @'
       </StackPanel>
     </Border>
 
-    <Border Grid.Row="2" Background="#0B1020" CornerRadius="10" Margin="16,8,16,16">
+    <GridSplitter Grid.Row="2" Height="8" HorizontalAlignment="Stretch" Background="Transparent" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
+    <Border Grid.Row="3" Background="#0B1020" CornerRadius="10" Margin="16,8,16,16" MinHeight="180">
       <RichTextBox x:Name="RtbLog" Background="Transparent" Foreground="#E5E7EB" BorderThickness="0"
                    IsReadOnly="True" FontFamily="Consolas" FontSize="12.5" Padding="12"
                    VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
@@ -359,7 +358,7 @@ $reader = New-Object System.Xml.XmlNodeReader ([xml]$xaml)
 $win = [Windows.Markup.XamlReader]::Load($reader)
 
 $ctl = @{}
-'TxtFrom','TxtTo','TxtServer','BtnMx','CboEnc','TxtPort','ChkAuth','AuthPanel','TxtUser','PwdPass','ChkCert','ChkScan','TxtTimeout','BtnSend','LblResult','RtbLog','ProviderGrid','LblProvider' |
+'TxtFrom','TxtTo','TxtServer','BtnMx','CboEnc','CboProvider','TxtPort','ChkAuth','AuthPanel','TxtUser','PwdPass','ChkCert','ChkScan','TxtTimeout','BtnSend','LblResult','RtbLog','LblProvider' |
     ForEach-Object { $ctl[$_] = $win.FindName($_) }
 
 function Set-Transcript {
@@ -408,15 +407,14 @@ function Set-Provider {
     Sync-AuthState
 }
 
-# Build the provider radio buttons
+# Build the provider dropdown.
 foreach ($name in $providers.Keys) {
-    $rb = New-Object System.Windows.Controls.RadioButton
-    $rb.Content = $name; $rb.GroupName = 'Provider'; $rb.Tag = $name
-    $rb.Margin = New-Object System.Windows.Thickness(0,3,10,3)
-    $rb.Add_Checked({ Set-Provider $this.Tag })
-    [void]$ctl.ProviderGrid.Children.Add($rb)
-    if ($name -eq 'Microsoft 365') { $rb.IsChecked = $true }   # default
+    [void]$ctl.CboProvider.Items.Add($name)
 }
+$ctl.CboProvider.Add_SelectionChanged({
+    if ($ctl.CboProvider.SelectedItem) { Set-Provider ([string]$ctl.CboProvider.SelectedItem) }
+})
+$ctl.CboProvider.SelectedItem = 'Microsoft 365' # default
 
 $ctl.ChkAuth.Add_Click({ Sync-AuthState })
 
