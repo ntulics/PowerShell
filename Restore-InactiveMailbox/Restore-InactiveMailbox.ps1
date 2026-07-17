@@ -4,7 +4,7 @@
     across multiple client tenants, with awareness of cloud-only vs. Entra Connect-synced targets.
 
 .DESCRIPTION
-    - No tenant/customer details are hardcoded in this script - it's safe to share as-is.
+    - No tenant details are hardcoded in this script - it's safe to share as-is.
     - No tenant list needs to be configured up front: click "Sign In / Connect" and the tool
       detects which tenant you're connected to from the Exchange Online session itself
       (via Get-OrganizationConfig / Get-AcceptedDomain) and labels everything accordingly.
