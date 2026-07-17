@@ -5,8 +5,7 @@ into a **reinstated user's** mailbox — for cases where a former employee's mai
 under retention/litigation hold, and that person later returns after their original account (and
 its 30-day Entra ID recovery window) is long gone.
 
-Single file, no install required beyond the prerequisites below. Safe to share as-is — no tenant
-or customer data is hardcoded in the script.
+Single file, no install required beyond the prerequisites below. Safe to share as-is — no tenant is hardcoded in the script.
 
 ---
 
