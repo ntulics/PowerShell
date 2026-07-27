@@ -4,7 +4,7 @@
     across multiple client tenants, with awareness of cloud-only vs. Entra Connect-synced targets.
 
 .DESCRIPTION
-    - No tenant details are hardcoded in this script - it's safe to share as-is.
+    - No tenant/customer details are hardcoded in this script - it's safe to share as-is.
     - No tenant list needs to be configured up front: click "Sign In / Connect" and the tool
       detects which tenant you're connected to from the Exchange Online session itself
       (via Get-OrganizationConfig / Get-AcceptedDomain) and labels everything accordingly.
@@ -247,6 +247,41 @@ $script:ConnectedTenant = $null
 $script:InactiveMailboxes = @()
 $script:SelectedInactive = $null
 $script:TargetIsDirSynced = $null
+$script:OnPremX500CommandPath = Join-Path $PSScriptRoot "Add-X500Proxy-OnPrem.txt"
+
+function ConvertTo-PowerShellSingleQuotedString {
+    param([AllowNull()] [string]$Value)
+    return "'{0}'" -f ($Value -replace "'", "''")
+}
+
+function New-OnPremX500CommandText {
+    param(
+        [Parameter(Mandatory)] [string]$Target,
+        [Parameter(Mandatory)] [string]$LegacyExchangeDN
+    )
+
+    $targetLiteral = ConvertTo-PowerShellSingleQuotedString -Value $Target
+    $x500Literal = ConvertTo-PowerShellSingleQuotedString -Value ("X500:{0}" -f $LegacyExchangeDN)
+
+    return @"
+# Run this in on-prem Active Directory PowerShell on a domain controller or management server.
+# This uses the target mailbox UPN/SMTP from the tool to find the AD user, then adds the X500 proxy.
+`$adUser = Get-ADUser -Filter "UserPrincipalName -eq $targetLiteral -or mail -eq $targetLiteral"
+Set-ADUser -Identity `$adUser -Add @{proxyAddresses=$x500Literal}
+"@
+}
+
+function Save-OnPremX500Command {
+    param([Parameter(Mandatory)] [string]$Target)
+
+    if (-not $script:SelectedInactive -or -not $script:SelectedInactive.LegacyExchangeDN) { return $null }
+
+    $commandText = New-OnPremX500CommandText -Target $Target -LegacyExchangeDN $script:SelectedInactive.LegacyExchangeDN
+    Set-Content -Path $script:OnPremX500CommandPath -Value $commandText -Encoding UTF8
+    Write-Log "On-prem X500 command written to: $script:OnPremX500CommandPath" "ACTION"
+    Write-Log ($commandText -replace "`r?`n", "  ") "ACTION"
+    return $commandText
+}
 
 function Disconnect-EXOIfConnected {
     if ($script:Connected) {
@@ -591,7 +626,8 @@ $lblLog.BackColor = [System.Drawing.Color]::Transparent
 $txtLog = New-Object System.Windows.Forms.RichTextBox
 $txtLog.Dock = "Fill"
 $txtLog.ReadOnly = $true
-$txtLog.ScrollBars = "Vertical"
+$txtLog.ScrollBars = "Both"
+$txtLog.WordWrap = $false
 $txtLog.BorderStyle = "None"
 $txtLog.BackColor = $Theme.ConsoleBg
 $txtLog.ForeColor = $Theme.ConsoleText
@@ -718,6 +754,9 @@ $grid.Add_SelectionChanged({
         $btnStartRestore.Enabled = $true
         Update-AddX500ButtonState
         Write-Log "Selected inactive mailbox: $($m.PrimarySmtpAddress) | GUID=$($m.ExchangeGuid) | LegacyExchangeDN=$($m.LegacyExchangeDN) | WhenSoftDeleted=$($m.WhenSoftDeleted) | LitigationHold=$($m.LitigationHoldEnabled) | RetentionHold=$($m.RetentionHoldEnabled)" "INFO"
+        if ($script:TargetIsDirSynced -eq $true -and $txtTarget.Text.Trim()) {
+            Save-OnPremX500Command -Target $txtTarget.Text.Trim() | Out-Null
+        }
     }
 })
 
@@ -753,6 +792,9 @@ $btnVerifyTarget.Add_Click({
             $lblTargetStatus.ForeColor = $Theme.Success
         }
         Write-Log "Verified target mailbox: $($mbx.PrimarySmtpAddress). IsDirSynced=$($script:TargetIsDirSynced)" "INFO"
+        if ($script:TargetIsDirSynced -and $script:SelectedInactive) {
+            Save-OnPremX500Command -Target $target | Out-Null
+        }
         Update-AddX500ButtonState
     }
     catch {
@@ -772,8 +814,9 @@ $btnAddX500.Add_Click({
         return
     }
     if ($script:TargetIsDirSynced) {
+        $commandText = Save-OnPremX500Command -Target $target
         [System.Windows.Forms.MessageBox]::Show(
-            "This target is synced from on-prem AD. Adding the proxy here would be overwritten on the next Entra Connect sync.`n`nRun this on a domain controller / management server instead:`n`nSet-ADUser -Identity <sAMAccountName> -Add @{proxyAddresses='X500:$($script:SelectedInactive.LegacyExchangeDN)'}",
+            "This target is synced from on-prem AD. Adding the proxy here would be overwritten on the next Entra Connect sync.`n`nThe full command has been written to:`n$script:OnPremX500CommandPath`n`nRun this on a domain controller / management server instead:`n`n$commandText",
             "On-prem action required", "OK", "Warning") | Out-Null
         return
     }
