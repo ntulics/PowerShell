@@ -247,6 +247,7 @@ $script:ConnectedTenant = $null
 $script:InactiveMailboxes = @()
 $script:SelectedInactive = $null
 $script:TargetIsDirSynced = $null
+$script:VerifiedTargetMailbox = $null
 $script:OnPremX500CommandPath = Join-Path $PSScriptRoot "Add-X500Proxy-OnPrem.txt"
 
 function ConvertTo-PowerShellSingleQuotedString {
@@ -717,6 +718,7 @@ $btnConnect.Add_Click({
         $btnCheckStatus.Enabled = $false
         $script:SelectedInactive = $null
         $script:TargetIsDirSynced = $null
+        $script:VerifiedTargetMailbox = $null
     }
 })
 
@@ -783,6 +785,7 @@ $btnVerifyTarget.Add_Click({
     try {
         $mbx = Get-Mailbox -Identity $target -ErrorAction Stop
         $script:TargetIsDirSynced = [bool]$mbx.IsDirSynced
+        $script:VerifiedTargetMailbox = $mbx
 
         if ($script:TargetIsDirSynced) {
             $lblTargetStatus.Text = "Found: $($mbx.PrimarySmtpAddress)  -  SYNCED from on-prem AD via Entra Connect.`r`nThe X500 proxy must be added on-prem (see log/message), not via Set-Mailbox - Entra Connect will overwrite it on the next sync cycle otherwise."
@@ -799,6 +802,7 @@ $btnVerifyTarget.Add_Click({
     }
     catch {
         $script:TargetIsDirSynced = $null
+        $script:VerifiedTargetMailbox = $null
         $lblTargetStatus.Text = "Not found"
         $lblTargetStatus.ForeColor = $Theme.Danger
         Write-Log "Target mailbox not found: $target" "WARN"
@@ -845,6 +849,10 @@ $btnStartRestore.Add_Click({
         [System.Windows.Forms.MessageBox]::Show("Enter and verify a target mailbox first.", "Missing input", "OK", "Warning") | Out-Null
         return
     }
+    if (-not $script:VerifiedTargetMailbox) {
+        [System.Windows.Forms.MessageBox]::Show("Click 'Verify Target' before starting the restore so the tool can use the target mailbox's unique GUID.", "Verify target first", "OK", "Warning") | Out-Null
+        return
+    }
     if ($script:TargetIsDirSynced -eq $true) {
         $proceed = [System.Windows.Forms.MessageBox]::Show(
             "Target is a synced mailbox. Have you already added the X500 proxy on-prem and let it sync through?`n`nContinue with the restore request anyway?",
@@ -862,9 +870,12 @@ $btnStartRestore.Add_Click({
     try {
         Write-Log "PRE-RESTORE SNAPSHOT: $($script:SelectedInactive | Out-String)" "ACTION"
 
+        $sourceMailboxId = $script:SelectedInactive.ExchangeGuid.ToString()
+        $targetMailboxId = $script:VerifiedTargetMailbox.Guid.ToString()
+
         $restoreParams = @{
-            SourceMailbox = $script:SelectedInactive.ExchangeGuid
-            TargetMailbox = $target
+            SourceMailbox = $sourceMailboxId
+            TargetMailbox = $targetMailboxId
             ErrorAction   = "Stop"
         }
         if ($chkAllowMismatch.Checked) {
@@ -873,7 +884,7 @@ $btnStartRestore.Add_Click({
         }
 
         $req = New-MailboxRestoreRequest @restoreParams
-        Write-Log "ACTION: Restore request created. RequestGuid=$($req.RequestGuid) Source=$($script:SelectedInactive.PrimarySmtpAddress) Target=$target Tenant=$($script:ConnectedTenant.Name) AllowLegacyDNMismatch=$($chkAllowMismatch.Checked)" "ACTION"
+        Write-Log "ACTION: Restore request created. RequestGuid=$($req.RequestGuid) Source=$($script:SelectedInactive.PrimarySmtpAddress) SourceExchangeGuid=$sourceMailboxId Target=$target TargetMailboxGuid=$targetMailboxId Tenant=$($script:ConnectedTenant.Name) AllowLegacyDNMismatch=$($chkAllowMismatch.Checked)" "ACTION"
         $btnCheckStatus.Enabled = $true
         [System.Windows.Forms.MessageBox]::Show("Restore request started. Use 'Check Restore Status' to monitor progress.", "Started", "OK", "Information") | Out-Null
     }
@@ -892,10 +903,15 @@ $btnStartRestore.Add_Click({
 
 $btnCheckStatus.Add_Click({
     $target = $txtTarget.Text.Trim()
+    if (-not $script:VerifiedTargetMailbox) {
+        [System.Windows.Forms.MessageBox]::Show("Click 'Verify Target' first so the tool can check status by the target mailbox's unique GUID.", "Verify target first", "OK", "Warning") | Out-Null
+        return
+    }
     try {
-        $requests = Get-MailboxRestoreRequest -TargetMailbox $target -ErrorAction Stop
+        $targetMailboxId = $script:VerifiedTargetMailbox.Guid.ToString()
+        $requests = Get-MailboxRestoreRequest -TargetMailbox $targetMailboxId -ErrorAction Stop
         if (-not $requests) {
-            Write-Log "No restore requests found for target '$target'." "INFO"
+            Write-Log "No restore requests found for target '$target' (TargetMailboxGuid=$targetMailboxId)." "INFO"
             return
         }
         foreach ($r in $requests) {
@@ -903,7 +919,7 @@ $btnCheckStatus.Add_Click({
             $line = "RequestGuid=$($r.RequestGuid) Status=$($r.Status) PercentComplete=$($stats.PercentComplete)% BytesTransferred=$($stats.BytesTransferred)"
             Write-Log $line "INFO"
             if ($r.Status -eq "Completed") {
-                Write-Log "Restore COMPLETED for target '$target'. The inactive mailbox will be removed by Exchange Online automatically." "ACTION"
+                Write-Log "Restore COMPLETED for target '$target' (TargetMailboxGuid=$targetMailboxId). Existing target content is preserved; inactive mailbox retention is still governed by hold/retention settings." "ACTION"
             }
         }
     }
