@@ -120,13 +120,26 @@ function Add-RoundedBorderPaint {
     param($Control, [int]$Radius, $BorderColor)
     $Control.Add_Paint({
         param($s, $e)
-        $path = New-RoundedPath -Width ($s.Width - 1) -Height ($s.Height - 1) -Radius $Radius
+        # Self-contained: a GetNewClosure() scriptblock can't see script-scope
+        # functions on some hosts (e.g. Windows Server 2022), so build the path inline.
+        $w = $s.Width - 2; $h = $s.Height - 2
+        if ($w -lt 2 -or $h -lt 2) { return }
+        $d = [Math]::Min($Radius * 2, [Math]::Min($w, $h))
+        $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+        $path.AddArc(0, 0, $d, $d, 180, 90)
+        $path.AddArc($w - $d, 0, $d, $d, 270, 90)
+        $path.AddArc($w - $d, $h - $d, $d, $d, 0, 90)
+        $path.AddArc(0, $h - $d, $d, $d, 90, 90)
+        $path.CloseFigure()
         $pen = New-Object System.Drawing.Pen($BorderColor, 1)
         $e.Graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
         $e.Graphics.DrawPath($pen, $path)
         $pen.Dispose()
         $path.Dispose()
     }.GetNewClosure())
+    # Repaint the whole border on resize (otherwise old edges smear) and kill flicker.
+    $Control.GetType().GetProperty("DoubleBuffered", [System.Reflection.BindingFlags]"Instance,NonPublic").SetValue($Control, $true, $null)
+    $Control.GetType().GetProperty("ResizeRedraw", [System.Reflection.BindingFlags]"Instance,NonPublic").SetValue($Control, $true, $null)
 }
 
 function Set-PrimaryButtonStyle {
@@ -433,6 +446,7 @@ $lblStatus.ForeColor = $Theme.Danger
 $lblStatus.Location = New-Object System.Drawing.Point(690, 16)
 $lblStatus.Size = New-Object System.Drawing.Size(274, 20)
 $lblStatus.TextAlign = "MiddleRight"
+$lblStatus.Anchor = "Top,Right"
 $lblStatus.Font = New-Object System.Drawing.Font($FontFamily, 9.5, [System.Drawing.FontStyle]::Bold)
 
 $btnForgetTenants = New-Object System.Windows.Forms.Button
@@ -440,6 +454,7 @@ $btnForgetTenants.Text = "Clear recent list"
 $btnForgetTenants.Location = New-Object System.Drawing.Point(824, 40)
 $btnForgetTenants.Size = New-Object System.Drawing.Size(140, 22)
 Set-LinkButtonStyle -Button $btnForgetTenants
+$btnForgetTenants.Anchor = "Top,Right"
 
 # -- GDAP fields row: only shown when the GDAP checkbox is ticked --
 $cmbRecent = New-Object System.Windows.Forms.ComboBox
@@ -489,8 +504,8 @@ $chkDelegated.Add_CheckedChanged({
 # -- Inactive mailbox grid --
 $lblGrid = New-Object System.Windows.Forms.Label
 $lblGrid.Text = "INACTIVE MAILBOXES"
-$lblGrid.Location = New-Object System.Drawing.Point(24, 96)
-$lblGrid.Size = New-Object System.Drawing.Size(300, 18)
+$lblGrid.Location = New-Object System.Drawing.Point(24, 100)
+$lblGrid.Size = New-Object System.Drawing.Size(150, 18)
 $lblGrid.ForeColor = $Theme.TextGray
 $lblGrid.Font = New-Object System.Drawing.Font($FontFamily, 8.5, [System.Drawing.FontStyle]::Bold)
 
@@ -500,6 +515,21 @@ $btnRefreshInactive.Location = New-Object System.Drawing.Point(798, 90)
 $btnRefreshInactive.Size = New-Object System.Drawing.Size(190, 32)
 $btnRefreshInactive.Enabled = $false
 Set-SecondaryButtonStyle -Button $btnRefreshInactive
+$btnRefreshInactive.Anchor = "Top,Right"
+
+$txtSearch = New-Object System.Windows.Forms.TextBox
+$txtSearch.Location = New-Object System.Drawing.Point(176, 96)
+$txtSearch.Size = New-Object System.Drawing.Size(360, 26)
+$txtSearch.Enabled = $false
+Set-FieldStyle -TextBox $txtSearch
+$txtSearch.Anchor = "Top,Left"
+
+$lblSearchCount = New-Object System.Windows.Forms.Label
+$lblSearchCount.Text = ""
+$lblSearchCount.Location = New-Object System.Drawing.Point(546, 100)
+$lblSearchCount.Size = New-Object System.Drawing.Size(200, 18)
+$lblSearchCount.ForeColor = $Theme.TextGray
+$lblSearchCount.Font = New-Object System.Drawing.Font($FontFamily, 8.5)
 
 $grid = New-Object System.Windows.Forms.DataGridView
 $grid.Location = New-Object System.Drawing.Point(24, 126)
@@ -557,6 +587,7 @@ $chkAllowMismatch = New-Object System.Windows.Forms.CheckBox
 $chkAllowMismatch.Text = "Allow legacy DN mismatch (bypass X500/LegacyExchangeDN check)"
 $chkAllowMismatch.Location = New-Object System.Drawing.Point(478, 325)
 $chkAllowMismatch.Size = New-Object System.Drawing.Size(486, 20)
+$chkAllowMismatch.Anchor = "Top,Left"
 $chkAllowMismatch.ForeColor = $Theme.TextDark
 $chkAllowMismatch.Font = New-Object System.Drawing.Font($FontFamily, 9)
 
@@ -564,12 +595,14 @@ $lblTargetStatus = New-Object System.Windows.Forms.Label
 $lblTargetStatus.Text = ""
 $lblTargetStatus.Location = New-Object System.Drawing.Point(24, 356)
 $lblTargetStatus.Size = New-Object System.Drawing.Size(940, 26)
+$lblTargetStatus.Anchor = "Top,Left,Right"
 $lblTargetStatus.Font = New-Object System.Drawing.Font($FontFamily, 9)
 
 $lblAllowMismatchHint = New-Object System.Windows.Forms.Label
 $lblAllowMismatchHint.Text = "Exchange normally requires the source mailbox's LegacyExchangeDN to appear as an X500 proxy on the target, so old internal replies still resolve. Tick this only if you understand that risk and want to skip that check (adds -AllowLegacyDNMismatch to the restore request)."
 $lblAllowMismatchHint.Location = New-Object System.Drawing.Point(24, 384)
 $lblAllowMismatchHint.Size = New-Object System.Drawing.Size(940, 32)
+$lblAllowMismatchHint.Anchor = "Top,Left,Right"
 $lblAllowMismatchHint.ForeColor = $Theme.TextGray
 $lblAllowMismatchHint.Font = New-Object System.Drawing.Font($FontFamily, 8)
 $lblAllowMismatchHint.Visible = $false
@@ -603,7 +636,7 @@ Set-SecondaryButtonStyle -Button $btnCheckStatus
 $pnlCard.Controls.AddRange(@(
     $btnConnect, $chkDelegated, $lblStatus, $btnForgetTenants,
     $cmbRecent, $txtDelegatedOrg, $lblDelegatedHint,
-    $lblGrid, $btnRefreshInactive, $grid,
+    $lblGrid, $txtSearch, $lblSearchCount, $btnRefreshInactive, $grid,
     $lblTarget, $txtTarget, $btnVerifyTarget, $chkAllowMismatch, $lblTargetStatus, $lblAllowMismatchHint,
     $btnAddX500, $btnStartRestore, $btnCheckStatus
 ))
@@ -711,6 +744,10 @@ $btnConnect.Add_Click({
         $btnRefreshInactive.Enabled = $true
         $btnVerifyTarget.Enabled = $true
         $grid.Rows.Clear()
+        $script:InactiveMailboxes = @()
+        $txtSearch.Clear()
+        $txtSearch.Enabled = $false
+        $lblSearchCount.Text = ""
         $txtTarget.Clear()
         $lblTargetStatus.Text = ""
         $btnAddX500.Enabled = $false
@@ -722,23 +759,57 @@ $btnConnect.Add_Click({
     }
 })
 
+# Fills the grid from $script:InactiveMailboxes, keeping only rows where any
+# column contains the search text (case-insensitive).
+function Update-GridFilter {
+    $q = $txtSearch.Text.Trim()
+    $prevGuid = if ($script:SelectedInactive) { [string]$script:SelectedInactive.ExchangeGuid } else { $null }
+    $script:SuppressSelect = $true
+    try {
+        $grid.SuspendLayout()
+        $grid.Rows.Clear()
+        $shown = 0
+        foreach ($mbx in @($script:InactiveMailboxes)) {
+            if ($q) {
+                $hay = "$($mbx.Name) $($mbx.PrimarySmtpAddress) $($mbx.ExchangeGuid) $($mbx.WhenSoftDeleted)"
+                if ($hay.IndexOf($q, [StringComparison]::OrdinalIgnoreCase) -lt 0) { continue }
+            }
+            $idx = $grid.Rows.Add($mbx.Name, $mbx.PrimarySmtpAddress, $mbx.ExchangeGuid, $mbx.WhenSoftDeleted, $mbx.LitigationHoldEnabled)
+            $shown++
+        }
+        $grid.ClearSelection()
+        $stillThere = $false
+        if ($prevGuid) {
+            foreach ($row in $grid.Rows) {
+                if ([string]$row.Cells["ExchangeGuid"].Value -eq $prevGuid) { $row.Selected = $true; $stillThere = $true; break }
+            }
+        }
+        if (-not $stillThere) {
+            $script:SelectedInactive = $null
+            $btnStartRestore.Enabled = $false
+        }
+        $lblSearchCount.Text = "$shown of $(@($script:InactiveMailboxes).Count) shown"
+    }
+    finally {
+        $grid.ResumeLayout()
+        $script:SuppressSelect = $false
+    }
+}
+
+$txtSearch.Add_TextChanged({ Update-GridFilter })
+
 $btnRefreshInactive.Add_Click({
     try {
         $grid.Rows.Clear()
+        $lblSearchCount.Text = ""
         Write-Log "Querying inactive mailboxes in '$($script:ConnectedTenant.Name)'..." "INFO"
         $script:InactiveMailboxes = Get-Mailbox -InactiveMailboxOnly -ResultSize Unlimited |
             Select-Object Name, PrimarySmtpAddress, ExchangeGuid, DistinguishedName, LegacyExchangeDN,
                            WhenSoftDeleted, LitigationHoldEnabled, RetentionHoldEnabled
 
-        foreach ($mbx in $script:InactiveMailboxes) {
-            $grid.Rows.Add(
-                $mbx.Name,
-                $mbx.PrimarySmtpAddress,
-                $mbx.ExchangeGuid,
-                $mbx.WhenSoftDeleted,
-                $mbx.LitigationHoldEnabled
-            ) | Out-Null
-        }
+        $txtSearch.Enabled = $true
+        $txtSearch.Clear()
+        Update-GridFilter
         Write-Log "Loaded $($script:InactiveMailboxes.Count) inactive mailbox(es)." "INFO"
     }
     catch {
@@ -748,7 +819,7 @@ $btnRefreshInactive.Add_Click({
 })
 
 $grid.Add_SelectionChanged({
-    if ($grid.SelectedRows.Count -eq 0) { return }
+    if ($script:SuppressSelect -or $grid.SelectedRows.Count -eq 0) { return }
     $guidStr = $grid.SelectedRows[0].Cells["ExchangeGuid"].Value
     $script:SelectedInactive = $script:InactiveMailboxes | Where-Object { $_.ExchangeGuid -eq $guidStr }
     if ($script:SelectedInactive) {
