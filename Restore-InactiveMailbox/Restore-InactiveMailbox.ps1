@@ -420,7 +420,7 @@ $pnlHeader.Controls.AddRange(@($lblTitle, $lblSubtitle))
 # ---- Card (main content) --------------------------------------------------
 $pnlCard = New-Object System.Windows.Forms.Panel
 $pnlCard.Dock = "Top"
-$pnlCard.Height = 490
+$pnlCard.Height = 520
 $pnlCard.BackColor = $Theme.CardBg
 $pnlCard.AutoScroll = $true
 Add-RoundedBorderPaint -Control $pnlCard -Radius 12 -BorderColor $Theme.CardBorder
@@ -446,7 +446,6 @@ $lblStatus.ForeColor = $Theme.Danger
 $lblStatus.Location = New-Object System.Drawing.Point(690, 16)
 $lblStatus.Size = New-Object System.Drawing.Size(274, 20)
 $lblStatus.TextAlign = "MiddleRight"
-$lblStatus.Anchor = "Top,Right"
 $lblStatus.Font = New-Object System.Drawing.Font($FontFamily, 9.5, [System.Drawing.FontStyle]::Bold)
 
 $btnForgetTenants = New-Object System.Windows.Forms.Button
@@ -454,7 +453,6 @@ $btnForgetTenants.Text = "Clear recent list"
 $btnForgetTenants.Location = New-Object System.Drawing.Point(824, 40)
 $btnForgetTenants.Size = New-Object System.Drawing.Size(140, 22)
 Set-LinkButtonStyle -Button $btnForgetTenants
-$btnForgetTenants.Anchor = "Top,Right"
 
 # -- GDAP fields row: only shown when the GDAP checkbox is ticked --
 $cmbRecent = New-Object System.Windows.Forms.ComboBox
@@ -515,14 +513,12 @@ $btnRefreshInactive.Location = New-Object System.Drawing.Point(798, 90)
 $btnRefreshInactive.Size = New-Object System.Drawing.Size(190, 32)
 $btnRefreshInactive.Enabled = $false
 Set-SecondaryButtonStyle -Button $btnRefreshInactive
-$btnRefreshInactive.Anchor = "Top,Right"
 
 $txtSearch = New-Object System.Windows.Forms.TextBox
 $txtSearch.Location = New-Object System.Drawing.Point(176, 96)
 $txtSearch.Size = New-Object System.Drawing.Size(360, 26)
 $txtSearch.Enabled = $false
 Set-FieldStyle -TextBox $txtSearch
-$txtSearch.Anchor = "Top,Left"
 
 $lblSearchCount = New-Object System.Windows.Forms.Label
 $lblSearchCount.Text = ""
@@ -534,7 +530,6 @@ $lblSearchCount.Font = New-Object System.Drawing.Font($FontFamily, 8.5)
 $grid = New-Object System.Windows.Forms.DataGridView
 $grid.Location = New-Object System.Drawing.Point(24, 126)
 $grid.Size = New-Object System.Drawing.Size(940, 150)
-$grid.Anchor = "Top,Left,Right"
 $grid.ReadOnly = $true
 $grid.AllowUserToAddRows = $false
 $grid.AllowUserToDeleteRows = $false
@@ -587,7 +582,6 @@ $chkAllowMismatch = New-Object System.Windows.Forms.CheckBox
 $chkAllowMismatch.Text = "Allow legacy DN mismatch (bypass X500/LegacyExchangeDN check)"
 $chkAllowMismatch.Location = New-Object System.Drawing.Point(478, 325)
 $chkAllowMismatch.Size = New-Object System.Drawing.Size(486, 20)
-$chkAllowMismatch.Anchor = "Top,Left"
 $chkAllowMismatch.ForeColor = $Theme.TextDark
 $chkAllowMismatch.Font = New-Object System.Drawing.Font($FontFamily, 9)
 
@@ -595,14 +589,12 @@ $lblTargetStatus = New-Object System.Windows.Forms.Label
 $lblTargetStatus.Text = ""
 $lblTargetStatus.Location = New-Object System.Drawing.Point(24, 356)
 $lblTargetStatus.Size = New-Object System.Drawing.Size(940, 26)
-$lblTargetStatus.Anchor = "Top,Left,Right"
 $lblTargetStatus.Font = New-Object System.Drawing.Font($FontFamily, 9)
 
 $lblAllowMismatchHint = New-Object System.Windows.Forms.Label
 $lblAllowMismatchHint.Text = "Exchange normally requires the source mailbox's LegacyExchangeDN to appear as an X500 proxy on the target, so old internal replies still resolve. Tick this only if you understand that risk and want to skip that check (adds -AllowLegacyDNMismatch to the restore request)."
 $lblAllowMismatchHint.Location = New-Object System.Drawing.Point(24, 384)
 $lblAllowMismatchHint.Size = New-Object System.Drawing.Size(940, 32)
-$lblAllowMismatchHint.Anchor = "Top,Left,Right"
 $lblAllowMismatchHint.ForeColor = $Theme.TextGray
 $lblAllowMismatchHint.Font = New-Object System.Drawing.Font($FontFamily, 8)
 $lblAllowMismatchHint.Visible = $false
@@ -611,24 +603,31 @@ $chkAllowMismatch.Add_CheckedChanged({
     $lblAllowMismatchHint.Visible = $chkAllowMismatch.Checked
 })
 
+$chkArchiveOnly = New-Object System.Windows.Forms.CheckBox
+$chkArchiveOnly.Text = "Restore ARCHIVE only (source archive -> target archive; enables the target's archive if it is missing)"
+$chkArchiveOnly.Location = New-Object System.Drawing.Point(24, 420)
+$chkArchiveOnly.Size = New-Object System.Drawing.Size(940, 22)
+$chkArchiveOnly.ForeColor = $Theme.TextDark
+$chkArchiveOnly.Font = New-Object System.Drawing.Font($FontFamily, 9)
+
 # -- Action buttons --
 $btnAddX500 = New-Object System.Windows.Forms.Button
 $btnAddX500.Text = "1. Add X500 Proxy to Target"
-$btnAddX500.Location = New-Object System.Drawing.Point(24, 430)
+$btnAddX500.Location = New-Object System.Drawing.Point(24, 456)
 $btnAddX500.Size = New-Object System.Drawing.Size(296, 38)
 $btnAddX500.Enabled = $false
 Set-SecondaryButtonStyle -Button $btnAddX500
 
 $btnStartRestore = New-Object System.Windows.Forms.Button
 $btnStartRestore.Text = "2. Start Restore Request"
-$btnStartRestore.Location = New-Object System.Drawing.Point(332, 430)
+$btnStartRestore.Location = New-Object System.Drawing.Point(332, 456)
 $btnStartRestore.Size = New-Object System.Drawing.Size(296, 38)
 $btnStartRestore.Enabled = $false
 Set-PrimaryButtonStyle -Button $btnStartRestore
 
 $btnCheckStatus = New-Object System.Windows.Forms.Button
 $btnCheckStatus.Text = "3. Check Restore Status"
-$btnCheckStatus.Location = New-Object System.Drawing.Point(640, 430)
+$btnCheckStatus.Location = New-Object System.Drawing.Point(640, 456)
 $btnCheckStatus.Size = New-Object System.Drawing.Size(296, 38)
 $btnCheckStatus.Enabled = $false
 Set-SecondaryButtonStyle -Button $btnCheckStatus
@@ -637,7 +636,7 @@ $pnlCard.Controls.AddRange(@(
     $btnConnect, $chkDelegated, $lblStatus, $btnForgetTenants,
     $cmbRecent, $txtDelegatedOrg, $lblDelegatedHint,
     $lblGrid, $txtSearch, $lblSearchCount, $btnRefreshInactive, $grid,
-    $lblTarget, $txtTarget, $btnVerifyTarget, $chkAllowMismatch, $lblTargetStatus, $lblAllowMismatchHint,
+    $lblTarget, $txtTarget, $btnVerifyTarget, $chkAllowMismatch, $lblTargetStatus, $lblAllowMismatchHint, $chkArchiveOnly,
     $btnAddX500, $btnStartRestore, $btnCheckStatus
 ))
 
@@ -805,7 +804,7 @@ $btnRefreshInactive.Add_Click({
         Write-Log "Querying inactive mailboxes in '$($script:ConnectedTenant.Name)'..." "INFO"
         $script:InactiveMailboxes = Get-Mailbox -InactiveMailboxOnly -ResultSize Unlimited |
             Select-Object Name, PrimarySmtpAddress, ExchangeGuid, DistinguishedName, LegacyExchangeDN,
-                           WhenSoftDeleted, LitigationHoldEnabled, RetentionHoldEnabled
+                           WhenSoftDeleted, LitigationHoldEnabled, RetentionHoldEnabled, ArchiveStatus, ArchiveGuid
 
         $txtSearch.Enabled = $true
         $txtSearch.Clear()
@@ -931,7 +930,8 @@ $btnStartRestore.Add_Click({
         if ($proceed -ne "Yes") { return }
     }
 
-    $confirmText = "Start a restore request merging inactive mailbox '$($script:SelectedInactive.PrimarySmtpAddress)' into '$target'?`n`nThis is the compliance-relevant action - it will be logged."
+    $what = if ($chkArchiveOnly.Checked) { "the ARCHIVE of inactive mailbox" } else { "inactive mailbox" }
+    $confirmText = "Start a restore request merging $what '$($script:SelectedInactive.PrimarySmtpAddress)' into '$target'?`n`nThis is the compliance-relevant action - it will be logged."
     if ($chkAllowMismatch.Checked) {
         $confirmText += "`n`n'Allow legacy DN mismatch' is ON - the restore will proceed even though the source's LegacyExchangeDN isn't present as an X500 proxy on the target. Old internal replies to the former mailbox may not resolve correctly."
     }
@@ -949,13 +949,38 @@ $btnStartRestore.Add_Click({
             TargetMailbox = $targetMailboxId
             ErrorAction   = "Stop"
         }
+        if ($chkArchiveOnly.Checked) {
+            $srcArchive = $script:SelectedInactive.ArchiveGuid
+            if (-not $srcArchive -or $srcArchive -eq [Guid]::Empty) {
+                Write-Log "Archive restore aborted: the inactive mailbox has no archive (ArchiveStatus=$($script:SelectedInactive.ArchiveStatus))." "WARN"
+                [System.Windows.Forms.MessageBox]::Show("The selected inactive mailbox has no archive to restore.", "No archive", "OK", "Warning") | Out-Null
+                return
+            }
+            $tgt = Get-Mailbox -Identity $targetMailboxId -ErrorAction Stop
+            if ($tgt.ArchiveStatus -ne "Active" -and (-not $tgt.ArchiveGuid -or $tgt.ArchiveGuid -eq [Guid]::Empty)) {
+                Write-Log "Target has no archive (ArchiveStatus=$($tgt.ArchiveStatus)). Enabling archive on target..." "INFO"
+                Enable-Mailbox -Identity $targetMailboxId -Archive -ErrorAction Stop | Out-Null
+                Write-Log "ACTION: Archive enabled on target '$target'." "ACTION"
+                # Archive provisioning can take a moment; wait until Exchange reports it.
+                $ready = $false
+                for ($i = 0; $i -lt 12 -and -not $ready; $i++) {
+                    Start-Sleep -Seconds 5
+                    $tgt = Get-Mailbox -Identity $targetMailboxId -ErrorAction Stop
+                    if ($tgt.ArchiveGuid -and $tgt.ArchiveGuid -ne [Guid]::Empty) { $ready = $true }
+                }
+                if (-not $ready) { throw "Archive was enabled but is not provisioned yet. Wait a few minutes and try again." }
+            }
+            $restoreParams["SourceIsArchive"] = $true
+            $restoreParams["TargetIsArchive"] = $true
+            Write-Log "Archive-only restore: SourceIsArchive and TargetIsArchive set." "INFO"
+        }
         if ($chkAllowMismatch.Checked) {
             $restoreParams["AllowLegacyDNMismatch"] = $true
             Write-Log "AllowLegacyDNMismatch is enabled for this restore request." "WARN"
         }
 
         $req = New-MailboxRestoreRequest @restoreParams
-        Write-Log "ACTION: Restore request created. RequestGuid=$($req.RequestGuid) Source=$($script:SelectedInactive.PrimarySmtpAddress) SourceExchangeGuid=$sourceMailboxId Target=$target TargetMailboxGuid=$targetMailboxId Tenant=$($script:ConnectedTenant.Name) AllowLegacyDNMismatch=$($chkAllowMismatch.Checked)" "ACTION"
+        Write-Log "ACTION: Restore request created. RequestGuid=$($req.RequestGuid) Source=$($script:SelectedInactive.PrimarySmtpAddress) SourceExchangeGuid=$sourceMailboxId Target=$target TargetMailboxGuid=$targetMailboxId Tenant=$($script:ConnectedTenant.Name) AllowLegacyDNMismatch=$($chkAllowMismatch.Checked) ArchiveOnly=$($chkArchiveOnly.Checked)" "ACTION"
         $btnCheckStatus.Enabled = $true
         [System.Windows.Forms.MessageBox]::Show("Restore request started. Use 'Check Restore Status' to monitor progress.", "Started", "OK", "Information") | Out-Null
     }
@@ -998,6 +1023,20 @@ $btnCheckStatus.Add_Click({
         Write-Log "Failed to check restore status: $($_.Exception.Message)" "ERROR"
         [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, "Error", "OK", "Error") | Out-Null
     }
+})
+
+# Anchors are applied only after the form has done its first layout. Setting a
+# Right anchor while the card is still at its tiny default width records bogus
+# distances, and the controls (status label, Load button) end up off-screen.
+$form.Add_Load({
+    $form.PerformLayout()
+    $pnlCard.PerformLayout()
+    $lblStatus.Anchor = "Top,Right"
+    $btnForgetTenants.Anchor = "Top,Right"
+    $btnRefreshInactive.Anchor = "Top,Right"
+    $grid.Anchor = "Top,Left,Right"
+    $lblTargetStatus.Anchor = "Top,Left,Right"
+    $lblAllowMismatchHint.Anchor = "Top,Left,Right"
 })
 
 $form.Add_FormClosing({
